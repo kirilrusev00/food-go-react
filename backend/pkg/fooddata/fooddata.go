@@ -8,20 +8,11 @@ import (
 	"os"
 
 	"encoding/json"
+
+	"github.com/kirilrusev00/food-go-react/pkg/models"
 )
 
-type FoodsJSON struct {
-	Foods []Food `json:"foods"`
-}
-
-type Food struct {
-	FdcId       int    `json:"fdcId"`
-	Description string `json:"description"`
-	GtinUpc     string `json:"gtinUpc"`
-	Ingredients string `json:"ingredients"`
-}
-
-func GetData(searchInput string) []byte {
+func GetData(searchInput string) models.FoodsJSON {
 	client := &http.Client{}
 
 	req, err := http.NewRequest("GET", "https://api.nal.usda.gov/fdc/v1/search", nil)
@@ -40,19 +31,17 @@ func GetData(searchInput string) []byte {
 
 	if err != nil {
 		fmt.Println("Errored when sending request to the server")
-		return nil
+		return models.FoodsJSON{}
 	}
 
 	defer resp.Body.Close()
 	resp_body, _ := ioutil.ReadAll(resp.Body)
 
-	var data FoodsJSON
+	var data models.FoodsJSON
 	if err := json.Unmarshal(resp_body, &data); err != nil {
 		fmt.Println("failed to unmarshal:", err)
-		return nil
+		return models.FoodsJSON{}
 	}
 
-	jsonBytes, err := json.Marshal(data)
-
-	return jsonBytes
+	return data
 }
