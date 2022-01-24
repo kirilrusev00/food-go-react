@@ -18,3 +18,14 @@ type FoodModel struct {
 	GtinUpc     string `json:"gtinUpc"`
 	Ingredients string `json:"ingredients"`
 }
+
+func FromFoodModelToFood(foodModel FoodModel) Food {
+	food := Food{}
+
+	food.FdcId = foodModel.FdcId
+	food.Description = foodModel.Description
+	food.GtinUpc = foodModel.GtinUpc
+	food.Ingredients = foodModel.Ingredients
+
+	return food
+}

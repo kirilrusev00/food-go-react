@@ -40,7 +40,8 @@ func InsertFood(food models.Food) {
 	defer insert.Close()
 }
 
-func GetFoodByGtinUpc(gtinUpc string) (models.FoodModel, bool) {
+func GetFoodByGtinUpc(gtinUpc string) []models.FoodModel {
+	var foods []models.FoodModel
 	db := dbConn()
 
 	rows, err := db.Query(`SELECT * FROM foods WHERE gtinUpc = ?`, gtinUpc)
@@ -49,7 +50,7 @@ func GetFoodByGtinUpc(gtinUpc string) (models.FoodModel, bool) {
 	}
 	defer rows.Close()
 
-	if rows.Next() {
+	for rows.Next() {
 		var food models.FoodModel
 		err = rows.Scan(&food.Id, &food.FdcId, &food.Description, &food.GtinUpc, &food.Ingredients)
 
@@ -57,10 +58,10 @@ func GetFoodByGtinUpc(gtinUpc string) (models.FoodModel, bool) {
 			panic(err.Error()) // proper error handling instead of panic in your app
 		}
 
-		return food, true
+		foods = append(foods, food)
 	}
 
-	return models.FoodModel{}, false
+	return foods
 }
 
 func GetAllFoods() []models.FoodModel {

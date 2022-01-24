@@ -11,6 +11,7 @@ import (
 	"github.com/kirilrusev00/food-go-react/pkg/database"
 	"github.com/kirilrusev00/food-go-react/pkg/decoder"
 	"github.com/kirilrusev00/food-go-react/pkg/fooddata"
+	"github.com/kirilrusev00/food-go-react/pkg/models"
 )
 
 const (
@@ -69,26 +70,25 @@ func createImage(w http.ResponseWriter, request *http.Request) {
 	// There is a newline character in the end that needs to be removed
 	result = result[:len(result)-1]
 
-	food, isInDb := database.GetFoodByGtinUpc(result)
+	foodsInDatabase := database.GetFoodByGtinUpc(result)
 
-	if !isInDb {
-		data := fooddata.GetData(result)
+	foods := []models.Food{}
+	for _, food := range foodsInDatabase {
+		foods = append(foods, models.FromFoodModelToFood(food))
+	}
+
+	data := models.FoodsJSON{}
+	data.Foods = foods
+
+	if len(foods) == 0 {
+		data = fooddata.GetData(result)
 
 		for _, food := range data.Foods {
 			database.InsertFood(food)
 		}
-
-		jsonBytes, err := json.Marshal(data)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		w.Write(jsonBytes)
-		return
 	}
 
-	jsonBytes, err := json.Marshal(food)
+	jsonBytes, err := json.Marshal(data)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
