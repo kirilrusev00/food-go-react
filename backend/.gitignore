@@ -16,3 +16,5 @@
 
 # Temporary files created in server
 tmp/
+
+.env

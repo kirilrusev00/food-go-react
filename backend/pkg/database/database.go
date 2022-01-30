@@ -2,35 +2,36 @@ package database
 
 import (
 	"database/sql"
-	"log"
 
 	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/kirilrusev00/food-go-react/pkg/config"
 	"github.com/kirilrusev00/food-go-react/pkg/models"
 )
 
-func dbConn() (db *sql.DB) {
+type DbConn struct {
+	db *sql.DB
+}
+
+func NewDBConn(config config.Database) (dbConn *DbConn, err error) {
 	cfg := mysql.Config{
-		User:                 "root",
-		Passwd:               "",
+		User:                 config.Username,
+		Passwd:               config.Password,
 		Net:                  "tcp",
-		Addr:                 "127.0.0.1:3306",
+		Addr:                 config.Address,
 		DBName:               "food",
 		AllowNativePasswords: true,
 		InterpolateParams:    true,
 	}
-	var err error
-	db, err = sql.Open("mysql", cfg.FormatDSN())
-	if err != nil {
-		log.Fatal(err)
+	db, err := sql.Open("mysql", cfg.FormatDSN())
+	dbConn = &DbConn{
+		db: db,
 	}
-	return db
+	return
 }
 
-func InsertFood(food models.Food) {
-	db := dbConn()
-
-	insert, err := db.Query("INSERT INTO foods (fdcId, description, gtinUpc, ingredients) "+
+func (dbConn *DbConn) InsertFood(food models.Food) {
+	insert, err := dbConn.db.Query("INSERT INTO foods (fdcId, description, gtinUpc, ingredients) "+
 		"VALUES ( ?, ?, ?, ? )", food.FdcId, food.Description, food.GtinUpc, food.Ingredients)
 
 	if err != nil {
@@ -40,11 +41,10 @@ func InsertFood(food models.Food) {
 	defer insert.Close()
 }
 
-func GetFoodByGtinUpc(gtinUpc string) []models.FoodModel {
+func (dbConn *DbConn) GetFoodByGtinUpc(gtinUpc string) []models.FoodModel {
 	var foods []models.FoodModel
-	db := dbConn()
 
-	rows, err := db.Query(`SELECT * FROM foods WHERE gtinUpc = ?`, gtinUpc)
+	rows, err := dbConn.db.Query(`SELECT * FROM foods WHERE gtinUpc = ?`, gtinUpc)
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
@@ -64,11 +64,10 @@ func GetFoodByGtinUpc(gtinUpc string) []models.FoodModel {
 	return foods
 }
 
-func GetAllFoods() []models.FoodModel {
+func (dbConn *DbConn) GetAllFoods(db *sql.DB) []models.FoodModel {
 	var foods []models.FoodModel
-	db := dbConn()
 
-	rows, err := db.Query("SELECT * FROM foods")
+	rows, err := dbConn.db.Query("SELECT * FROM foods")
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}

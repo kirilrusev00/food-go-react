@@ -1,98 +1,50 @@
 package server
 
 import (
-	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 
-	"encoding/json"
-
+	"github.com/kirilrusev00/food-go-react/pkg/config"
 	"github.com/kirilrusev00/food-go-react/pkg/database"
-	"github.com/kirilrusev00/food-go-react/pkg/decoder"
-	"github.com/kirilrusev00/food-go-react/pkg/fooddata"
-	"github.com/kirilrusev00/food-go-react/pkg/models"
+
+	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
-const (
-	maxSizeFileInMB = 32
-)
-
-func RunServer() {
-	createImageHandler := http.HandlerFunc(createImage)
-	http.Handle("/image", createImageHandler)
-	http.ListenAndServe("localhost:3000", nil)
+type Server struct {
+	config config.Config
+	dbConn *database.DbConn
+	router *mux.Router
 }
 
-// The request need to be of Content-Type multipart/form-data
-// and have form-data key "photo" and value the image
-func createImage(w http.ResponseWriter, request *http.Request) {
-	err := request.ParseMultipartForm(maxSizeFileInMB << 20)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+func NewServer(config config.Config, dbConn *database.DbConn) (*Server, error) {
+	server := &Server{
+		config: config,
+		dbConn: dbConn,
 	}
 
-	file, h, err := request.FormFile("photo")
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+	server.setupRouter()
+	return server, nil
+}
 
-	newpath := filepath.Join("..", "tmp")
-	newErr := os.MkdirAll(newpath, os.ModePerm)
-	if newErr != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+func (server *Server) setupRouter() {
+	router := mux.NewRouter()
 
-	tmpFilePath := "../tmp/" + h.Filename
-	tmpfile, err := os.Create(tmpFilePath)
-	defer os.Remove(tmpFilePath)
-	defer tmpfile.Close()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	_, err = io.Copy(tmpfile, file)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	router.HandleFunc("/image", server.createImage).Methods("POST")
 
-	result := decoder.ConnectToDecoder(tmpFilePath)
+	server.router = router
+}
 
-	if result == "Could not decode QR code\n" {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		return
-	}
+func (server *Server) Start() {
+	handler := server.corsHandler()
+	http.ListenAndServe(server.config.Server.Address, handler)
+}
 
-	// There is a newline character in the end that needs to be removed
-	result = result[:len(result)-1]
+func (server *Server) corsHandler() (handler http.Handler) {
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{server.config.Client.Address},
+		AllowCredentials: true,
+	})
 
-	foodsInDatabase := database.GetFoodByGtinUpc(result)
-
-	foods := []models.Food{}
-	for _, food := range foodsInDatabase {
-		foods = append(foods, models.FromFoodModelToFood(food))
-	}
-
-	data := models.FoodsJSON{}
-	data.Foods = foods
-
-	if len(foods) == 0 {
-		data = fooddata.GetData(result)
-
-		for _, food := range data.Foods {
-			database.InsertFood(food)
-		}
-	}
-
-	jsonBytes, err := json.Marshal(data)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.Write(jsonBytes)
+	handler = c.Handler(server.router)
+	return
 }
