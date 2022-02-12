@@ -1,10 +1,10 @@
 package qrdecoderserver
 
 import (
-	"fmt"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	"log"
 	"net"
 
 	"github.com/kirilrusev00/food-go-react/pkg/config"
@@ -17,9 +17,9 @@ type QrDecoderServer struct {
 }
 
 func NewQrDecoderServer(config config.QrDecoder) (*QrDecoderServer, error) {
-	listener, error := net.Listen("tcp", config.Address)
-	if error != nil {
-		return &QrDecoderServer{}, error
+	listener, err := net.Listen("tcp", config.Address)
+	if err != nil {
+		return &QrDecoderServer{}, err
 	}
 
 	manager := ClientManager{
@@ -39,13 +39,11 @@ func NewQrDecoderServer(config config.QrDecoder) (*QrDecoderServer, error) {
 }
 
 func (server *QrDecoderServer) Run() {
-	fmt.Println("Starting server...")
-
 	go server.manager.start()
 	for {
-		connection, error := server.listener.Accept()
-		if error != nil {
-			fmt.Println(error)
+		connection, err := server.listener.Accept()
+		if err != nil {
+			log.Println(err)
 		}
 		client := &Client{socket: connection, data: make(chan []byte)}
 		server.manager.register <- client

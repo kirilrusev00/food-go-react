@@ -2,7 +2,7 @@ package qrdecoderclient
 
 import (
 	"bufio"
-	"fmt"
+	"log"
 	"net"
 
 	"github.com/kirilrusev00/food-go-react/pkg/config"
@@ -23,13 +23,15 @@ func NewQrDecoderClient(config config.QrDecoder, tmpFilePath string) *QrDecoderC
 func (client *QrDecoderClient) ConnectToDecoder() (message string, err error) {
 	connType := "tcp"
 
-	fmt.Println("Connecting to", connType, "server", client.config.Address)
+	log.Println("Connecting to QR Decoder server")
 
 	conn, err := net.Dial(connType, client.config.Address)
 	if err != nil {
-		fmt.Println("Error connecting:", err.Error())
+		log.Println("Error connecting:", err.Error())
 		return
 	}
+
+	log.Println("Connected to QR Decoder server")
 
 	conn.Write([]byte(client.tmpFilePath))
 

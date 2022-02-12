@@ -17,22 +17,25 @@ func main() {
 
 	qrDecoderServer, err := qrdecoderserver.NewQrDecoderServer(config.QrDecoder)
 	if err != nil {
-		log.Fatal("Cannot start qr decoder server:", err)
+		log.Fatal("Cannot start QR Decoder server:", err)
 	}
 	go qrDecoderServer.Run()
+
+	log.Println("Started QR Decoder server")
 
 	db, err := database.NewDBConn(config.Database)
 	if err != nil {
 		log.Fatal("Cannot connect to db:", err)
 	}
 
+	log.Println("Connected to the database")
+
 	server, err := server.NewServer(config, db)
 	if err != nil {
-		log.Fatal("cannot create server:", err)
+		log.Fatal("Cannot create server:", err)
 	}
 
+	log.Println("Starting the server...")
+
 	server.Start()
-	// if err != nil {
-	// 	log.Fatal("cannot start server:", err)
-	// }
 }

@@ -18,22 +18,23 @@ func clen(n []byte) int {
 	return len(n)
 }
 
-func convertQRCodeToString(localQrPath string) string {
-	result, error := qrDecoder(localQrPath)
+func decodeQrCode(localQrPath string) string {
+	result, err := getQrCodeContent(localQrPath)
 
-	if result == nil || error != nil {
+	if err != nil {
 		return "Could not decode QR code"
 	}
 
 	return result.String()
 }
 
-func qrDecoder(localQrPath string) (*gozxing.Result, error) {
+func getQrCodeContent(localQrPath string) (*gozxing.Result, error) {
 	file, err := os.Open(localQrPath)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
+
 	img, _, err := image.Decode(file)
 	if err != nil {
 		return nil, err

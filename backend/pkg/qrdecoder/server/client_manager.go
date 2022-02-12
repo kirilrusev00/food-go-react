@@ -1,7 +1,6 @@
 package qrdecoderserver
 
 import (
-	"fmt"
 	"net"
 )
 
@@ -22,12 +21,10 @@ func (manager *ClientManager) start() {
 		select {
 		case connection := <-manager.register:
 			manager.clients[connection] = true
-			fmt.Println("Added new connection!")
 		case connection := <-manager.unregister:
 			if _, ok := manager.clients[connection]; ok {
 				close(connection.data)
 				delete(manager.clients, connection)
-				fmt.Println("One of the connections has terminated!")
 			}
 		case message := <-manager.broadcast:
 			for connection := range manager.clients {
@@ -66,7 +63,7 @@ func (manager *ClientManager) send(client *Client) {
 				return
 			}
 			filePath := string(message[:clen(message)])
-			decoded := convertQRCodeToString(filePath)
+			decoded := decodeQrCode(filePath)
 			client.socket.Write([]byte(decoded))
 			client.socket.Write([]byte("\n"))
 		}
