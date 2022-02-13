@@ -1,3 +1,6 @@
+/*
+	Package server contains functions for starting and running the server.
+*/
 package server
 
 import (
@@ -10,12 +13,18 @@ import (
 	"github.com/rs/cors"
 )
 
+/*
+	Server contains configurations for the server.
+*/
 type Server struct {
 	config config.Config
 	dbConn *database.DbConn
 	router *mux.Router
 }
 
+/*
+	NewServer creates a new server.
+*/
 func NewServer(config config.Config, dbConn *database.DbConn) (*Server, error) {
 	server := &Server{
 		config: config,
@@ -34,6 +43,9 @@ func (server *Server) setupRouter() {
 	server.router = router
 }
 
+/*
+	Start starts the server.
+*/
 func (server *Server) Start() {
 	handler := server.corsHandler()
 	http.ListenAndServe(server.config.Server.Address, handler)
@@ -41,7 +53,7 @@ func (server *Server) Start() {
 
 func (server *Server) corsHandler() (handler http.Handler) {
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{server.config.Client.Address},
+		AllowedOrigins:   []string{server.config.Server.ClientAddress},
 		AllowCredentials: true,
 	})
 

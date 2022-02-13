@@ -1,18 +1,32 @@
+/*
+	Package database manages the communication with the local foods database.
+*/
 package database
 
 import (
 	"database/sql"
 
 	"github.com/go-sql-driver/mysql"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/kirilrusev00/food-go-react/pkg/config"
 	"github.com/kirilrusev00/food-go-react/pkg/models"
 )
 
-type DbConn struct {
-	db *sql.DB
+/*
+	SqlDB contains the function from github.com/go-sql-driver/mysql package
+	that are used for communicating with the database.
+*/
+type SqlDB interface {
+	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
+// DbConn stores the connection to the local database.
+type DbConn struct {
+	Db SqlDB
+}
+
+/*
+	NewDBConn returns a new db connection to a local food database.
+*/
 func NewDBConn(config config.Database) (dbConn *DbConn, err error) {
 	cfg := mysql.Config{
 		User:                 config.Username,
@@ -25,64 +39,79 @@ func NewDBConn(config config.Database) (dbConn *DbConn, err error) {
 	}
 	db, err := sql.Open("mysql", cfg.FormatDSN())
 	dbConn = &DbConn{
-		db: db,
+		Db: db,
 	}
 	return
 }
 
-func (dbConn *DbConn) InsertFood(food models.Food) {
-	insert, err := dbConn.db.Query("INSERT INTO foods (fdcId, description, gtinUpc, ingredients) "+
+/*
+	InsertFood inserts a new food into the database.
+*/
+func (dbConn *DbConn) InsertFood(food models.Food) (err error) {
+	insert, err := dbConn.Db.Query("INSERT INTO foods (fdcId, description, gtinUpc, ingredients) "+
 		"VALUES ( ?, ?, ?, ? )", food.FdcId, food.Description, food.GtinUpc, food.Ingredients)
 
-	if err != nil {
-		panic(err.Error())
+	if insert != nil {
+		defer insert.Close()
 	}
 
-	defer insert.Close()
+	return
 }
 
-func (dbConn *DbConn) GetFoodByGtinUpc(gtinUpc string) []models.FoodModel {
-	var foods []models.FoodModel
-
-	rows, err := dbConn.db.Query(`SELECT * FROM foods WHERE gtinUpc = ?`, gtinUpc)
-	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
+/*
+	GetFoodByGtinUpc returns foods by gtinUpc code.
+*/
+func (dbConn *DbConn) GetFoodByGtinUpc(gtinUpc string) (foods []models.FoodModel, err error) {
+	rows, err := dbConn.Db.Query(`SELECT * FROM foods WHERE gtinUpc = ?`, gtinUpc)
+	if rows == nil {
+		return
 	}
+
 	defer rows.Close()
+
+	if err != nil {
+		return
+	}
 
 	for rows.Next() {
 		var food models.FoodModel
 		err = rows.Scan(&food.Id, &food.FdcId, &food.Description, &food.GtinUpc, &food.Ingredients)
 
 		if err != nil {
-			panic(err.Error()) // proper error handling instead of panic in your app
+			return
 		}
 
 		foods = append(foods, food)
 	}
 
-	return foods
+	return
 }
 
-func (dbConn *DbConn) GetAllFoods(db *sql.DB) []models.FoodModel {
-	var foods []models.FoodModel
-
-	rows, err := dbConn.db.Query("SELECT * FROM foods")
-	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
+/*
+	GetAllFoods returns all food in the databse.
+*/
+func (dbConn *DbConn) GetAllFoods() (foods []models.FoodModel, err error) {
+	rows, err := dbConn.Db.Query("SELECT * FROM foods")
+	if rows == nil {
+		return
 	}
+
 	defer rows.Close()
+
+	if err != nil {
+		return
+	}
 
 	for rows.Next() {
 		var food models.FoodModel
 
 		err = rows.Scan(&food.Id, &food.FdcId, &food.Description, &food.GtinUpc, &food.Ingredients)
 		if err != nil {
-			panic(err.Error()) // proper error handling instead of panic in your app
+			return
 		}
 
 		foods = append(foods, food)
 	}
 
-	return foods
+	return
 }

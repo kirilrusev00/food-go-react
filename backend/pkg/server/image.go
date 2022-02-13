@@ -13,11 +13,14 @@ import (
 	qrdecoderclient "github.com/kirilrusev00/food-go-react/pkg/qrdecoder/client"
 )
 
-// The request need to be of Content-Type multipart/form-data
-// and have form-data key "photo" and value the image
 func (server *Server) createImage(w http.ResponseWriter, request *http.Request) {
 	log.Println("Received new request for decoding a QR code")
 
+	/*
+		Parse the request. It is expected to be of Content-Type multipart/form-data
+		and have form-data key "photo" and value the image. The size of the image
+		can be max config.Server.MaxFileSizeInMb MBs.
+	*/
 	err := request.ParseMultipartForm(server.config.Server.MaxFileSizeInMb << 20)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -30,6 +33,8 @@ func (server *Server) createImage(w http.ResponseWriter, request *http.Request) 
 		return
 	}
 
+	// The received image is saved in a temporary directory.
+	// It will be deleted after sending the response to the client.
 	newpath := filepath.Join("..", "tmp")
 	newErr := os.MkdirAll(newpath, os.ModePerm)
 	if newErr != nil {
@@ -53,6 +58,8 @@ func (server *Server) createImage(w http.ResponseWriter, request *http.Request) 
 
 	log.Printf("Created new tmp file <%s>", tmpFilePath)
 
+	// Send the file path to the image to the QR Decoder server and
+	// receive the gtinUpc encoded in the image.
 	qrdecoderClient := qrdecoderclient.NewQrDecoderClient(server.config.QrDecoder, tmpFilePath)
 	result, err := qrdecoderClient.ConnectToDecoder()
 
@@ -62,12 +69,16 @@ func (server *Server) createImage(w http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	// There is a newline character in the end that needs to be removed
+	// There is a newline character in the end that needs to be removed.
 	result = result[:len(result)-1]
 
 	log.Printf("The decoded qr code is <%s>", result)
 
-	foodsInDatabase := server.dbConn.GetFoodByGtinUpc(result)
+	// Search for the gtinUpc in the database
+	foodsInDatabase, err := server.dbConn.GetFoodByGtinUpc(result)
+	if err != nil {
+		log.Printf("There was an error in searching in the database")
+	}
 
 	foods := []models.Food{}
 	for _, food := range foodsInDatabase {
@@ -77,6 +88,7 @@ func (server *Server) createImage(w http.ResponseWriter, request *http.Request) 
 	data := models.FoodsJSON{}
 	data.Foods = foods
 
+	// If this gtinUpc is not in the database, send a request to FoodData Central API.
 	if len(foods) == 0 {
 		log.Printf("Could not find <%s> in the database. Sending request to FoodData Central", result)
 
@@ -90,11 +102,16 @@ func (server *Server) createImage(w http.ResponseWriter, request *http.Request) 
 
 		log.Printf("Found <%s> in FoodData Central. Adding it to the database", result)
 
+		// Insert the results into the database.
 		for _, food := range data.Foods {
-			server.dbConn.InsertFood(food)
+			err := server.dbConn.InsertFood(food)
+			if err != nil {
+				log.Printf("There was an error in inserting into the database")
+			}
 		}
 	}
 
+	// Convert the result to FoodsJSON model.
 	jsonBytes, err := json.Marshal(data)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -103,5 +120,6 @@ func (server *Server) createImage(w http.ResponseWriter, request *http.Request) 
 
 	log.Printf("Sending response <%s> to client", jsonBytes)
 
+	// Send the converted result to the client.
 	w.Write(jsonBytes)
 }

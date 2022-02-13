@@ -1,3 +1,6 @@
+/*
+	Package qrdecoderserver contains functions for the QR Decoder server.
+*/
 package qrdecoderserver
 
 import (
@@ -10,12 +13,19 @@ import (
 	"github.com/kirilrusev00/food-go-react/pkg/config"
 )
 
+/*
+	QrDecoderServer contains configurations for the QR Decoder server.
+*/
 type QrDecoderServer struct {
 	config   config.QrDecoder
 	listener net.Listener
 	manager  ClientManager
 }
 
+/*
+	NewQrDecoderServer creates a new QR Decoder server with the configuration
+	variables needed for that.
+*/
 func NewQrDecoderServer(config config.QrDecoder) (*QrDecoderServer, error) {
 	listener, err := net.Listen("tcp", config.Address)
 	if err != nil {
@@ -38,6 +48,9 @@ func NewQrDecoderServer(config config.QrDecoder) (*QrDecoderServer, error) {
 	return qrDecoderServer, nil
 }
 
+/*
+	Run starts and runs the QR Decoder server.
+*/
 func (server *QrDecoderServer) Run() {
 	go server.manager.start()
 	for {

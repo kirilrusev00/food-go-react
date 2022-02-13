@@ -1,3 +1,4 @@
+// Starting point of the Food Analyzer project
 package main
 
 import (
@@ -10,11 +11,13 @@ import (
 )
 
 func main() {
-	config, err := config.LoadConfig()
+	// Load the environment variables
+	config, err := config.LoadConfig(".env")
 	if err != nil {
 		log.Fatal("Cannot read env variables:", err)
 	}
 
+	// Create and start the QR Decoder server
 	qrDecoderServer, err := qrdecoderserver.NewQrDecoderServer(config.QrDecoder)
 	if err != nil {
 		log.Fatal("Cannot start QR Decoder server:", err)
@@ -23,6 +26,7 @@ func main() {
 
 	log.Println("Started QR Decoder server")
 
+	// Connect to the database
 	db, err := database.NewDBConn(config.Database)
 	if err != nil {
 		log.Fatal("Cannot connect to db:", err)
@@ -30,6 +34,7 @@ func main() {
 
 	log.Println("Connected to the database")
 
+	// Create and start the server
 	server, err := server.NewServer(config, db)
 	if err != nil {
 		log.Fatal("Cannot create server:", err)
