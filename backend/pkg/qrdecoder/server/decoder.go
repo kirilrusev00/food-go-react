@@ -18,6 +18,9 @@ func clen(n []byte) int {
 	return len(n)
 }
 
+/*
+	decodeQrCode returns the decoded QR code as string or "Could not decode QR code" if there was an error
+*/
 func decodeQrCode(localQrPath string) string {
 	result, err := getQrCodeContent(localQrPath)
 
@@ -28,6 +31,9 @@ func decodeQrCode(localQrPath string) string {
 	return result.String()
 }
 
+/*
+	getQrCodeContent returns the decoded QR code as gozxing.Result or error
+*/
 func getQrCodeContent(localQrPath string) (*gozxing.Result, error) {
 	file, err := os.Open(localQrPath)
 	if err != nil {

@@ -13,6 +13,9 @@ import (
 	qrdecoderclient "github.com/kirilrusev00/food-go-react/pkg/qrdecoder/client"
 )
 
+/*
+	createImage is the handler function for where a request to "/image" endpoint is made
+*/
 func (server *Server) createImage(w http.ResponseWriter, request *http.Request) {
 	log.Println("Received new request for decoding a QR code")
 

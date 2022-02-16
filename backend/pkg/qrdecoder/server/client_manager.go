@@ -4,6 +4,10 @@ import (
 	"net"
 )
 
+/*
+	ClientManager manages the client connections. It stores them, registers and unregisters them
+	and broadcasts the messages to the clients.
+*/
 type ClientManager struct {
 	clients    map[*Client]bool
 	broadcast  chan []byte
@@ -11,11 +15,17 @@ type ClientManager struct {
 	unregister chan *Client
 }
 
+/*
+	Client stores the connection with the client - the socket and the chan to
+*/
 type Client struct {
 	socket net.Conn
 	data   chan []byte
 }
 
+/*
+	start starts the client manager.
+*/
 func (manager *ClientManager) start() {
 	for {
 		select {
@@ -39,6 +49,9 @@ func (manager *ClientManager) start() {
 	}
 }
 
+/*
+	receive is used to receive a message from a client and pass it to broadcast channel in the manager.
+*/
 func (manager *ClientManager) receive(client *Client) {
 	for {
 		message := make([]byte, 4096)
@@ -54,6 +67,9 @@ func (manager *ClientManager) receive(client *Client) {
 	}
 }
 
+/*
+	send is used to process the message from a client (a file path) and return the decoded file.
+*/
 func (manager *ClientManager) send(client *Client) {
 	defer client.socket.Close()
 	for {
@@ -66,6 +82,8 @@ func (manager *ClientManager) send(client *Client) {
 			decoded := decodeQrCode(filePath)
 			client.socket.Write([]byte(decoded))
 			client.socket.Write([]byte("\n"))
+
+			manager.unregister <- client
 		}
 	}
 }

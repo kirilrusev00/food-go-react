@@ -35,6 +35,9 @@ func NewServer(config config.Config, dbConn *database.DbConn) (*Server, error) {
 	return server, nil
 }
 
+/*
+	setupRouter sets up the router of the server
+*/
 func (server *Server) setupRouter() {
 	router := mux.NewRouter()
 
@@ -51,6 +54,9 @@ func (server *Server) Start() {
 	http.ListenAndServe(server.config.Server.Address, handler)
 }
 
+/*
+	corsHandler allows some requests to be made by the client
+*/
 func (server *Server) corsHandler() (handler http.Handler) {
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{server.config.Server.ClientAddress},
