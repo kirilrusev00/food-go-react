@@ -35,8 +35,9 @@ The Food Analyzer Server:
 The requests to the REST API require authentication with an API key which can be retrieved after registering [here](https://fdc.nal.usda.gov/api-key-signup.html).
 - can receive a POST request with an image of a QR code in its body. Then it saves the image in a temporary file and sends the path to it to the QR decoder server. If the decoding of the image is successful, the server should receive the gtin upc code of the food. Then, it checks first in the local database if a food with this code exists. If not, it sends a request to the FoodData Central API. As a result the client will receive either information about the food or an error if there was some problem.
 From the product data we use only its description field `description` (`RAFFAELLO, ALMOND COCONUT TREAT`), its unique id `fdcId` (`415269`). Some products with `data type Branded` have also GTIN or UPC код, `gtinUpc` (`009800146130`).
+
 _Note:_ GTIN, or [Global Trade Item Number and UPC](https://en.wikipedia.org/wiki/Global_Trade_Item_Number), or [Universal Product Code](https://en.wikipedia.org/wiki/Universal_Product_Code), are identificators of products coded in a QR code like the one below:
-![UPC Barcode](../master/examples/raffaello.png)
+![UPC QR code](../main/examples/raffaello.png)
 To generate QR codes that can be decoded by the server, the [QR Code Generator from the ZXing Project](https://zxing.appspot.com/generator) is used.
 ## Food Analyzer Client
 The client can make HTTP requests to the server after an image to decode is uploaded. Then it is sent in the body of a POST request to the server. If the decoding is successful, the client receives a response status 200 and a response body with information about the food. If there was a problem, the client receives another response status related to what has gone wrong.
@@ -44,12 +45,13 @@ The client can make HTTP requests to the server after an image to decode is uplo
 It connects with the Food Analyzer Server via tcp socket. It receives the path to an image, then reads from the file and decodes it using the [gozxing](https://github.com/makiuchi-d/gozxing) library. The result should be a gtin upc code of a food that is sent back to the Food Analyzer Server.
 ## How to run the applications
 Start the local database. For initial setup execute [this file](https://github.com/kirilrusev00/food-go-react/blob/main/backend/pkg/database/query/create.sql).
-To start the Food Analyzer Server and the QR Decoder Server navigate to `backend/cmd` and run 
+
+To start the __Food Analyzer Server__ and the __QR Decoder Server__ navigate to `backend/cmd` and run 
 ```
 go run main.go
 ```
 
-To start the Food Analyzer Client navigate to `frontend` and run
+To start the __Food Analyzer Client__ navigate to `frontend` and run
 ```
 npm start
 ```
