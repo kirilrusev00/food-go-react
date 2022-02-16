@@ -37,7 +37,9 @@ The requests to the REST API require authentication with an API key which can be
 From the product data we use only its description field `description` (`RAFFAELLO, ALMOND COCONUT TREAT`), its unique id `fdcId` (`415269`). Some products with `data type Branded` have also GTIN or UPC код, `gtinUpc` (`009800146130`).
 
 _Note:_ GTIN, or [Global Trade Item Number and UPC](https://en.wikipedia.org/wiki/Global_Trade_Item_Number), or [Universal Product Code](https://en.wikipedia.org/wiki/Universal_Product_Code), are identificators of products coded in a QR code like the one below:
+
 ![UPC QR code](../main/examples/raffaello.png)
+
 To generate QR codes that can be decoded by the server, the [QR Code Generator from the ZXing Project](https://zxing.appspot.com/generator) is used.
 ## Food Analyzer Client
 The client can make HTTP requests to the server after an image to decode is uploaded. Then it is sent in the body of a POST request to the server. If the decoding is successful, the client receives a response status 200 and a response body with information about the food. If there was a problem, the client receives another response status related to what has gone wrong.
